@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pixel Scan NFT Generator</title>
+<style>
+    body {
+        margin: 0;
+        background: #111;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: sans-serif;
+    }
+
+    canvas {
+        box-shadow: 0 0 40px rgba(255,255,255,0.1);
+        image-rendering: pixelated;
+    }
+
+    .overlay {
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        color: #aaa;
+        font-size: 12px;
+        opacity: 0.6;
+    }
+</style>
+</head>
+<body>
+
+<canvas id="art" width="1920" height="1080"></canvas>
+
+<div class="overlay">
+    Pixel NFT Generator — Live Scan
+</div>
+
+<script>
+const canvas = document.getElementById('art');
+const ctx = canvas.getContext('2d');
+
+// Coordinates
+let x = 0;
+let y = 0;
+
+// Speed control (pixels per frame)
+let pixelsPerFrame = 2000;
+
+// Random colour generator
+function randomColor() {
+    return `rgb(
+        ${Math.floor(Math.random() * 256)},
+        ${Math.floor(Math.random() * 256)},
+        ${Math.floor(Math.random() * 256)}
+    )`;
+}
+
+// Draw loop
+function draw() {
+    for (let i = 0; i < pixelsPerFrame; i++) {
+        ctx.fillStyle = randomColor();
+        ctx.fillRect(x, y, 1, 1);
+
+        x++;
+
+        // End of row
+        if (x >= canvas.width) {
+            x = 0;
+            y++;
+        }
+
+        // Stop when done
+        if (y >= canvas.height) {
+            console.log("Finished rendering");
+            return;
+        }
+    }
+
+    requestAnimationFrame(draw);
+}
+
+// Start
+draw();
+</script>
+
+</body>
+</html>
