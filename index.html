@@ -1,220 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Pixel Walk NFT Generator</title>
+<meta charset="UTF-8">
+<title>Random Walk Pixel NFT</title>
 <style>
-    html, body {
+    body {
         margin: 0;
-        padding: 0;
-        background: #000;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        font-family: Arial, sans-serif;
+        background: #111;
         display: flex;
         justify-content: center;
         align-items: center;
+        height: 100vh;
     }
 
     canvas {
-        width: min(100vw, 1920px);
-        height: auto;
-        max-height: 100vh;
+        box-shadow: 0 0 40px rgba(255,255,255,0.1);
         image-rendering: pixelated;
-        image-rendering: crisp-edges;
-        box-shadow: 0 0 40px rgba(255,255,255,0.08);
-        background: black;
     }
 
     .overlay {
         position: fixed;
-        left: 12px;
-        bottom: 12px;
-        color: rgba(255,255,255,0.55);
+        bottom: 10px;
+        left: 10px;
+        color: #aaa;
         font-size: 12px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        pointer-events: none;
-        user-select: none;
+        opacity: 0.6;
     }
 </style>
 </head>
 <body>
 
 <canvas id="art" width="1920" height="1080"></canvas>
-<div class="overlay">Pixel Walk / Colour Evolution / Trail Memory</div>
+
+<div class="overlay">
+    Random Walk — Adjustable Speed
+</div>
 
 <script>
 const canvas = document.getElementById('art');
-const ctx = canvas.getContext('2d', { alpha: false });
+const ctx = canvas.getContext('2d');
 
-const W = canvas.width;
-const H = canvas.height;
+// Start position
+let x = 0;
+let y = 0;
 
-// --------------------------------------------------
-// SETTINGS
-// --------------------------------------------------
+// ✅ Speed control (pixels per second)
+let pixelsPerSecond = 1500; // <-- tweak this
 
-// 36 pixels every 3.6 seconds = 1 pixel every 100ms
-const STEP_INTERVAL_MS = 10;
+// Timing
+let lastTime = performance.now();
+let pixelAccumulator = 0;
 
-// How quickly trails die away (smaller = slower fade)
-const LIFE_DECAY = 0.025;
-
-// Chance a dying pixel fades to white instead of black
-const WHITE_FADE_CHANCE = 0.18;
-
-// Colour evolution speed
-const HUE_STEP = 1.35;
-
-// Trail revival strength when revisiting an old pixel
-const REVIVE_AMOUNT = 0.35;
-
-// --------------------------------------------------
-// STATE
-// --------------------------------------------------
-
-let walkerX = 0;
-let walkerY = 0;
-let hue = 0;
-
-// Memory of all visited pixels
-// key => { hue, sat, light, life, deathMode }
-const memory = new Map();
-
-// Currently active fading pixels (only these are updated each tick)
-const activeKeys = new Set();
-
-// Start with a black background
-ctx.fillStyle = "black";
-ctx.fillRect(0, 0, W, H);
-
-// --------------------------------------------------
-// HELPERS
-// --------------------------------------------------
-
-function key(x, y) {
-    return y * W + x;
+// Random colour
+function randomColor() {
+    return `rgb(
+        ${Math.floor(Math.random() * 256)},
+        ${Math.floor(Math.random() * 256)},
+        ${Math.floor(Math.random() * 256)}
+    )`;
 }
 
-function randomDirection() {
-    const d = Math.floor(Math.random() * 4);
-    if (d === 0) return [1, 0];   // right
-    if (d === 1) return [-1, 0];  // left
-    if (d === 2) return [0, 1];   // down
-    return [0, -1];               // up
-}
+// Random movement
+function movePixel() {
+    const dir = Math.floor(Math.random() * 4);
 
-function clamp(val, min, max) {
-    return Math.max(min, Math.min(max, val));
-}
-
-function drawPixel(x, y, state) {
-    const life = clamp(state.life, 0, 1);
-
-    let sat, light;
-
-    if (state.deathMode === "white") {
-        // Fade towards white:
-        // saturation drains away, lightness rises to 100
-        sat = state.sat * life;
-        light = state.light * life + 100 * (1 - life);
-    } else {
-        // Fade towards black:
-        // saturation drains away, lightness falls to 0
-        sat = state.sat * life;
-        light = state.light * life;
+    switch (dir) {
+        case 0: x++; break;
+        case 1: x--; break;
+        case 2: y++; break;
+        case 3: y--; break;
     }
 
-    ctx.fillStyle = `hsl(${state.hue}, ${sat}%, ${light}%)`;
-    ctx.fillRect(x, y, 1, 1);
+    // Clamp to bounds
+    x = Math.max(0, Math.min(canvas.width - 1, x));
+    y = Math.max(0, Math.min(canvas.height - 1, y));
 }
 
-function visitPixel(x, y) {
-    const k = key(x, y);
-    let state = memory.get(k);
+// Draw loop
+function draw(now) {
+    const deltaTime = (now - lastTime) / 1000;
+    lastTime = now;
 
-    if (!state) {
-        // First visit: create a new evolved colour
-        hue = (hue + HUE_STEP) % 360;
+    pixelAccumulator += pixelsPerSecond * deltaTime;
 
-        state = {
-            hue: hue,
-            sat: 92,
-            light: 52,
-            life: 1,
-            deathMode: Math.random() < WHITE_FADE_CHANCE ? "white" : "black"
-        };
+    // Draw however many pixels we've accumulated
+    while (pixelAccumulator >= 1) {
+        ctx.fillStyle = randomColor();
+        ctx.fillRect(x, y, 1, 1);
 
-        memory.set(k, state);
-    } else {
-        // Trail memory:
-        // revisiting revives the pixel instead of replacing it
-        state.life = clamp(state.life + REVIVE_AMOUNT, 0, 1);
+        movePixel();
 
-        // Slight evolutionary drift each revisit
-        state.hue = (state.hue + 4) % 360;
-        state.sat = clamp(state.sat + 1.5, 70, 100);
-        state.light = clamp(state.light + 0.5, 40, 65);
+        pixelAccumulator--;
     }
 
-    activeKeys.add(k);
-    drawPixel(x, y, state);
+    requestAnimationFrame(draw);
 }
 
-function decayTrails() {
-    const toRemove = [];
-
-    for (const k of activeKeys) {
-        const state = memory.get(k);
-        if (!state) {
-            toRemove.push(k);
-            continue;
-        }
-
-        state.life -= LIFE_DECAY;
-
-        const x = k % W;
-        const y = (k / W) | 0;
-
-        if (state.life <= 0) {
-            state.life = 0;
-            drawPixel(x, y, state); // draw final black/white end-state
-            toRemove.push(k);
-        } else {
-            drawPixel(x, y, state);
-        }
-    }
-
-    for (const k of toRemove) {
-        activeKeys.delete(k);
-    }
-}
-
-function stepWalker() {
-    // Draw current location
-    visitPixel(walkerX, walkerY);
-
-    // Move in a random direction
-    const [dx, dy] = randomDirection();
-    walkerX = clamp(walkerX + dx, 0, W - 1);
-    walkerY = clamp(walkerY + dy, 0, H - 1);
-
-    // Fade active trail pixels
-    decayTrails();
-}
-
-// --------------------------------------------------
-// START
-// --------------------------------------------------
-
-// Mark the initial top-left pixel immediately
-visitPixel(walkerX, walkerY);
-
-// Then move at exactly 1 step per 100ms
-setInterval(stepWalker, STEP_INTERVAL_MS);
+requestAnimationFrame(draw);
 </script>
 
 </body>
