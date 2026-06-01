@@ -49,13 +49,13 @@ let y = 0;
 let pixelsPerFrame = 2000;
 
 // Random colour generator
+
+const palette = ["#ff0040", "#00ffee", "#ffaa00", "#111111"];
+
 function randomColor() {
-    return `rgb(
-        ${Math.floor(Math.random() * 256)},
-        ${Math.floor(Math.random() * 256)},
-        ${Math.floor(Math.random() * 256)}
-    )`;
+    return palette[Math.floor(Math.random() * palette.length)];
 }
+
 
 // Draw loop
 function draw() {
