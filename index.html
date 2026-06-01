@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Pixel Scan NFT Generator</title>
+<title>Random Walk Pixel NFT</title>
 <style>
     body {
         margin: 0;
@@ -34,48 +34,53 @@
 <canvas id="art" width="1920" height="1080"></canvas>
 
 <div class="overlay">
-    Pixel NFT Generator — Live Scan
+    Random Walk Pixel Generator
 </div>
 
 <script>
 const canvas = document.getElementById('art');
 const ctx = canvas.getContext('2d');
 
-// Coordinates
+// Start position (top-left as requested)
 let x = 0;
 let y = 0;
 
-// Speed control (pixels per frame)
-let pixelsPerFrame = 2000;
+// Speed control
+let pixelsPerFrame = 10000;
 
-// Random colour generator
-
-const palette = ["#ff0040", "#00ffee", "#ffaa00", "#111111"];
-
+// Random colour
 function randomColor() {
-    return palette[Math.floor(Math.random() * palette.length)];
+    return `rgb(
+        ${Math.floor(Math.random() * 256)},
+        ${Math.floor(Math.random() * 256)},
+        ${Math.floor(Math.random() * 256)}
+    )`;
 }
 
+// Random direction step
+function movePixel() {
+    const dir = Math.floor(Math.random() * 4);
+
+    switch (dir) {
+        case 0: x++; break; // right
+        case 1: x--; break; // left
+        case 2: y++; break; // down
+        case 3: y--; break; // up
+    }
+
+    // Clamp to canvas bounds
+    x = Math.max(0, Math.min(canvas.width - 1, x));
+    y = Math.max(0, Math.min(canvas.height - 1, y));
+}
 
 // Draw loop
 function draw() {
     for (let i = 0; i < pixelsPerFrame; i++) {
+
         ctx.fillStyle = randomColor();
         ctx.fillRect(x, y, 1, 1);
 
-        x++;
-
-        // End of row
-        if (x >= canvas.width) {
-            x = 0;
-            y++;
-        }
-
-        // Stop when done
-        if (y >= canvas.height) {
-            console.log("Finished rendering");
-            return;
-        }
+        movePixel();
     }
 
     requestAnimationFrame(draw);
@@ -83,6 +88,7 @@ function draw() {
 
 // Start
 draw();
+
 </script>
 
 </body>
