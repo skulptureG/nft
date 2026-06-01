@@ -11,6 +11,7 @@
         justify-content: center;
         align-items: center;
         height: 100vh;
+        font-family: sans-serif;
     }
 
     canvas {
@@ -33,23 +34,19 @@
 <canvas id="art" width="1920" height="1080"></canvas>
 
 <div class="overlay">
-    Random Walk — Adjustable Speed
+    Random Walk Pixel Generator
 </div>
 
 <script>
 const canvas = document.getElementById('art');
 const ctx = canvas.getContext('2d');
 
-// Start position
+// Start position (top-left as requested)
 let x = 0;
 let y = 0;
 
-// ✅ Speed control (pixels per second)
-let pixelsPerSecond = 1500; // <-- tweak this
-
-// Timing
-let lastTime = performance.now();
-let pixelAccumulator = 0;
+// Speed control
+let pixelsPerFrame = 10000;
 
 // Random colour
 function randomColor() {
@@ -60,43 +57,38 @@ function randomColor() {
     )`;
 }
 
-// Random movement
+// Random direction step
 function movePixel() {
     const dir = Math.floor(Math.random() * 4);
 
     switch (dir) {
-        case 0: x++; break;
-        case 1: x--; break;
-        case 2: y++; break;
-        case 3: y--; break;
+        case 0: x++; break; // right
+        case 1: x--; break; // left
+        case 2: y++; break; // down
+        case 3: y--; break; // up
     }
 
-    // Clamp to bounds
+    // Clamp to canvas bounds
     x = Math.max(0, Math.min(canvas.width - 1, x));
     y = Math.max(0, Math.min(canvas.height - 1, y));
 }
 
 // Draw loop
-function draw(now) {
-    const deltaTime = (now - lastTime) / 1000;
-    lastTime = now;
+function draw() {
+    for (let i = 0; i < pixelsPerFrame; i++) {
 
-    pixelAccumulator += pixelsPerSecond * deltaTime;
-
-    // Draw however many pixels we've accumulated
-    while (pixelAccumulator >= 1) {
         ctx.fillStyle = randomColor();
         ctx.fillRect(x, y, 1, 1);
 
         movePixel();
-
-        pixelAccumulator--;
     }
 
     requestAnimationFrame(draw);
 }
 
-requestAnimationFrame(draw);
+// Start
+draw();
+
 </script>
 
 </body>
